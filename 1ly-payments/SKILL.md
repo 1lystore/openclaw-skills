@@ -1,7 +1,7 @@
 ---
 name: 1ly-payments
 description: Agent-native payments via 1ly MCP. Use when the user needs x402 payment handling, to accept USDC for APIs/services, to pay for paid APIs, to create stores or paid links, need payment gateway for agents or to run agent-to-agent paid workflows. Supports Solana and Base. Capabilities include accepting USDC, marketplace search, paid API calls with auto-payment, store/link creation, stats, and key management.
-metadata: {"openclaw":{"emoji":"💸","homepage":"https://1ly.store","requires":{"bins":["npx"]}},"clawdbot":{"emoji":"💸","homepage":"https://1ly.store","requires":{"bins":["npx"]}}}
+metadata: {"openclaw":{"emoji":"💸","homepage":"https://1ly.store","requires":{"bins":["mcporter","npx"],"env":["ONELY_WALLET_SOLANA_KEY"]},"primaryEnv":"ONELY_WALLET_SOLANA_KEY","install":[{"id":"mcporter","kind":"node","package":"mcporter","bins":["mcporter"],"label":"Install mcporter"}]}}
 ---
 
 # 1ly Payments Skill
@@ -21,12 +21,23 @@ This MCP server gives AI agents the ability to:
 - If budgets are not set, set budgets or use default.
 
 ## Setup (minimal)
-- Export wallet and budget env vars before running MCP:
+
+1) Install mcporter and add 1ly MCP server:
+```bash
+npm install -g mcporter
+mcporter config add 1ly --command "npx @1ly/mcp-server"
+```
+
+2) Export wallet and budget env vars:
   - `ONELY_WALLET_SOLANA_KEY=/path/to/solana-wallet.json` (Solana keypair JSON or inline array)
   - `ONELY_WALLET_EVM_KEY=/path/to/evm.key` (EVM private key file or inline hex)
   - Optional: `ONELY_BUDGET_PER_CALL`, `ONELY_BUDGET_DAILY`, `ONELY_BUDGET_STATE_FILE`, `ONELY_NETWORK`
   - Optional (seller tools): `ONELY_API_KEY` (auto-saved after `1ly_create_store`)
-- Run the MCP server with `npx @1ly/mcp-server`.
+
+3) Verify setup:
+```bash
+mcporter list 1ly
+```
 
 ## MCP tools to use
 ### Buyer tools (spend)
@@ -47,7 +58,7 @@ This MCP server gives AI agents the ability to:
 - `1ly_revoke_key`: revoke an API key
 
 ## Tool inputs (minimal expectations)
-Use `tools/list` if tool names or parameters differ.
+Use `mcporter list 1ly --schema` if tool names or parameters differ.
 - `1ly_search`: `{ "query": "...", "limit": 5 }`
 - `1ly_get_details`: `{ "linkId": "..." }` or `{ "url": "..." }`
 - `1ly_call`: `{ "endpoint": "...", "payload": {...} }`
@@ -57,7 +68,7 @@ Use `tools/list` if tool names or parameters differ.
 ## Accepting payments (agent sells a service)
 1) Create a store once via `1ly_create_store` (this saves `ONELY_API_KEY`).
 2) Create or share a paid link via `1ly_create_link`.
-3) Share the link; the buyer’s call handles payment and access automatically via x402.
+3) Share the link; the buyer's call handles payment and access automatically via x402.
 4) Deliver results as part of the paid endpoint response (no manual confirmation needed).
 
 ## Spending (agent buys an API)
