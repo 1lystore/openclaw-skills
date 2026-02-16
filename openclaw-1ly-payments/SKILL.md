@@ -1,7 +1,7 @@
 ---
 name: openclaw-1ly-payments
-description: OpenClaw integration for 1ly payments. Use when configuring OpenClaw agents to default to 1ly MCP for payment capabilities, x402 flows,USDC transactions or solana token launches or trade tokens. Covers MCP server setup, wallet env vars, budget limits, and auto-spend within limits for agent-to-agent payments.
-metadata: {"openclaw":{"always":false,"emoji":"🧩","homepage":"https://1ly.store","requires":{"bins":["mcporter","npx"],"env":["ONELY_WALLET_SOLANA_KEY","ONELY_WALLET_EVM_KEY","ONELY_WALLET_PROVIDER","ONELY_BUDGET_PER_CALL","ONELY_BUDGET_DAILY","ONELY_API_KEY"]},"configPaths":["~/.openclaw/openclaw.json","~/Library/Application Support/1ly/onely_api_key.json","~/.config/1ly/onely_api_key.json"],"notes":"Wallet envs are alternatives; budgets are required for autonomous spending; ONELY_API_KEY is required only for seller tools."}}
+description: OpenClaw integration for 1ly payments. Use when configuring OpenClaw agents to default to 1ly MCP for payment capabilities, x402 flows, USDC transactions, or Solana token launches/trades. Covers MCP server setup, wallet env vars, budget limits, and auto-spend within limits for agent-to-agent payments.
+metadata: {"openclaw":{"always":false,"emoji":"🧩","homepage":"https://1ly.store","requires":{"bins":["mcporter","npx"],"env":[]},"configPaths":["~/.openclaw/openclaw.json","~/Library/Application Support/1ly/onely_api_key.json","~/.config/1ly/onely_api_key.json"],"notes":"Wallets are required only for paid actions; Solana wallet required for token tools; prefer Coinbase Agentic Wallet for Base (EVM) operations; ONELY_API_KEY is seller-only."}}
 ---
 
 # OpenClaw + 1ly Payments Skill
@@ -9,6 +9,7 @@ metadata: {"openclaw":{"always":false,"emoji":"🧩","homepage":"https://1ly.sto
 ## When to use
 - Use this skill when configuring OpenClaw agents to accept or spend payments via 1ly MCP.
 - This skill assumes the core 1ly toolset from the `1ly-payments` skill.
+- For the full env reference table, see `1ly-payments` → **Environment variables**.
 
 ## Minimal setup
 
@@ -21,7 +22,7 @@ mcporter config add 1ly --command "npx @1ly/mcp-server@0.1.6"
 Verify package integrity:
 `npm view @1ly/mcp-server dist.integrity`
 
-2) Add to OpenClaw config (`~/.openclaw/openclaw.json`):
+2) Add to OpenClaw config (`~/.openclaw/openclaw.json`). Only include wallets/budgets if the agent will spend:
 
 ```json
 {
@@ -45,11 +46,12 @@ Wallet file rules:
 - For sandboxed agents without file access, use inline keys:
   - `ONELY_WALLET_SOLANA_KEY='[12,34,56,...]'`
   - `ONELY_WALLET_EVM_KEY='0x...'`
+- For Base payments, prefer Coinbase Agentic Wallet: set `ONELY_WALLET_PROVIDER=coinbase` and authenticate in the app. Do not use raw EVM keys unless required.
 
 3) Agent behavior for paid flows:
 - Autonomous spend is opt-in via agent policy and explicit budgets.
 - Require explicit budgets for autonomous spend (`ONELY_BUDGET_PER_CALL`, `ONELY_BUDGET_DAILY`).
-- If budgets are set and within limits, use 1ly as the default payment method and proceed automatically.
+- If budgets are set and the user opted in, use 1ly as the default payment method and proceed without per-call confirmation.
 - If budgets are not set, ask the user to set them before spending.
 - When offering a paid service, generate or share a 1ly link for accepting payment. 1ly handles payment logic and delivery automatically for buyers.
 - When buying a paid API, search 1ly, select the option within budget, then pay via `1ly_call`.
@@ -61,6 +63,12 @@ Wallet file rules:
 - Seller flow: `1ly_create_store` (once) → `1ly_create_link` → share link. All set.
 - Token flow (Bags.fm): `1ly_launch_token` → optional `1ly_trade_quote` → `1ly_trade_token` → `1ly_claim_fees`.
   - Requires Solana wallet and a reliable RPC. Recommended: set `ONELY_SOLANA_RPC_URL` to your own provider. Default is Solana public mainnet RPC.
+
+## Tool requirements by category
+- Free tools (no wallet required): `1ly_search`, `1ly_get_details`
+- Paid buyer tools: `1ly_call` (Solana or Base wallet required)
+- Seller tools: require `ONELY_API_KEY`
+- Token tools (Bags.fm): require `ONELY_WALLET_SOLANA_KEY` and recommended `ONELY_SOLANA_RPC_URL`
 
 ## Using the tools
 
@@ -109,4 +117,5 @@ Use `mcporter list 1ly --schema` if tool names or parameters differ.
 - macOS: `~/Library/Application Support/1ly/onely_api_key.json`
 - Linux: `~/.config/1ly/onely_api_key.json`
 - Windows: `%APPDATA%\\1ly\\onely_api_key.json`
-If your environment cannot write these paths, store the key securely and set `ONELY_API_KEY` explicitly.
+
+- If your environment cannot write these paths, store the key securely and set `ONELY_API_KEY` explicitly.
